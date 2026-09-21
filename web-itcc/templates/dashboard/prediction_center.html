@@ -1,0 +1,302 @@
+{# ============================================================ #}
+{# dashboard/prediction_center.html                             #}
+{# Edge AI Prediction Center — Crop Yield, Confidence,         #}
+{# Feature Importance, Weekly Trend, Digital Twin Placeholder   #}
+{# ============================================================ #}
+<section id="prediction" class="border-b-2 border-forest bg-forest">
+  <div class="max-w-screen-xl mx-auto px-6 py-10">
+
+    {# ── Header Seksi ── #}
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <p class="text-[10px] font-grotesk text-lime/60 tracking-widest uppercase mb-1">Google Coral Edge TPU · Inferensi Lokal</p>
+        <div class="flex items-center gap-4">
+          <h2 class="text-2xl font-grotesk font-bold text-canvas leading-none">Edge AI Prediction Center</h2>
+          <!-- Tombol Trigger Konfigurasi Lahan -->
+          <button id="btn-buka-konfigurasi" class="border border-lime/50 text-lime px-4 py-3 md:px-3 md:py-1 text-[9px] font-grotesk font-bold tracking-widest uppercase hover:bg-lime hover:text-forest transition-colors cursor-pointer">
+            Konfigurasi Lahan
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-lime-deep pulse-active block"></span>
+        <span class="text-[10px] font-grotesk text-lime/60 tracking-widest uppercase">Model Aktif · CropYieldV3</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-4 md:gap-6">
+
+      {# ── Blok Estimasi Hasil Panen ── #}
+      <div class="col-span-12 md:col-span-5 lg:col-span-4">
+        <div class="border-2 border-lime bg-forest p-6 h-full flex flex-col justify-between">
+          <div>
+            <p class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-4">Estimasi Hasil Panen</p>
+
+            {# Cincin AI — lingkaran dekoratif di tengah #}
+            <div class="ai-ring inline-flex items-center justify-center w-full py-8 mb-4">
+              <div class="text-center">
+                {# id="ai-yield-nilai" → target update DOM WebSocket #}
+                <p class="font-grotesk font-bold text-lime text-6xl leading-none stat-number" id="ai-yield-nilai">46.2</p>
+                <p class="text-canvas/60 font-inter text-sm mt-1">Ton</p>
+              </div>
+            </div>
+
+            <div class="border-t border-lime/20 pt-4 mt-2">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase">Luas Lahan</span>
+                <span id="ai-luas-lahan" class="text-sm font-grotesk font-bold text-canvas">3.0 Hektar</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase">Yield per Ha</span>
+                <span id="ai-yield-per-ha" class="text-sm font-grotesk font-bold text-lime">15.4 Ton/Ha</span>
+              </div>
+            </div>
+          </div>
+
+          {# Status lahan — diperbarui oleh WebSocket #}
+          <div class="mt-6 border-t border-lime/20 pt-4">
+            <div class="geo-card-lime p-3">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 bg-forest block"></span>
+                <p class="text-[9px] font-grotesk font-bold text-forest tracking-widest uppercase">Status Lahan</p>
+              </div>
+              <p id="ai-status-lahan" class="text-forest font-grotesk font-bold text-lg leading-tight">Sangat Optimal</p>
+              <p id="ai-status-desc" class="text-forest/60 font-inter text-[10px] mt-0.5">Semua parameter dalam batas ideal. Tidak ada intervensi diperlukan.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Confidence Score & Feature Importance ── #}
+      <div class="col-span-12 md:col-span-7 lg:col-span-5 flex flex-col gap-4">
+
+        {# Confidence Score #}
+        <div class="border-2 border-lime/30 p-5">
+          <p class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-3">Confidence Score Model</p>
+          <div class="flex items-end gap-4">
+            <p class="font-grotesk font-bold text-4xl text-lime">
+              <span id="ai-confidence-nilai">94.7</span><span class="text-xl text-lime/60">%</span>
+            </p>
+            <p class="text-[10px] font-inter text-lime/50 mb-1">
+              Presisi prediksi tinggi.<br/>Berdasarkan 1,200 iterasi training.
+            </p>
+          </div>
+          <div class="w-full h-1.5 bg-lime/20 mt-3">
+            <div id="ai-confidence-bar" class="h-1.5 bg-lime bar-fill" style="--fill:94.7%"></div>
+          </div>
+        </div>
+
+        {# Bobot Fitur Input Model — Feature Importance #}
+        <div class="border-2 border-lime/30 p-5 flex-1">
+          <p class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-4">Bobot Fitur Input Model</p>
+          <div class="space-y-3">
+            {# Setiap baris: label + nilai + progress bar #}
+            <div>
+              <div class="flex justify-between text-[10px] font-grotesk mb-1">
+                <span class="text-canvas/70">Kelembapan Tanah</span>
+                <span class="text-lime font-bold" id="fi-kelembapan">32%</span>
+              </div>
+              <div class="h-1 bg-lime/20"><div class="h-1 bg-lime bar-fill" style="--fill:32%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] font-grotesk mb-1">
+                <span class="text-canvas/70">pH Tanah</span>
+                <span class="text-lime font-bold" id="fi-ph">24%</span>
+              </div>
+              <div class="h-1 bg-lime/20"><div class="h-1 bg-lime bar-fill" style="--fill:24%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] font-grotesk mb-1">
+                <span class="text-canvas/70">Suhu Lingkungan</span>
+                <span class="text-lime font-bold" id="fi-suhu">21%</span>
+              </div>
+              <div class="h-1 bg-lime/20"><div class="h-1 bg-lime bar-fill" style="--fill:21%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] font-grotesk mb-1">
+                <span class="text-canvas/70">Intensitas Cahaya</span>
+                <span class="text-lime font-bold" id="fi-cahaya">15%</span>
+              </div>
+              <div class="h-1 bg-lime/20"><div class="h-1 bg-lime bar-fill" style="--fill:15%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] font-grotesk mb-1">
+                <span class="text-canvas/70">Konduktivitas EC</span>
+                <span class="text-lime font-bold" id="fi-ec">8%</span>
+              </div>
+              <div class="h-1 bg-lime/20"><div class="h-1 bg-lime bar-fill" style="--fill:8%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Weekly Trend Chart + Digital Twin Placeholder ── #}
+      <div class="col-span-12 lg:col-span-3 flex flex-col gap-4">
+
+        {# Tren Prediksi Mingguan (bar chart) #}
+        <div class="border-2 border-lime/30 p-5 flex flex-col flex-1">
+          <p class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-4">Tren Prediksi Mingguan</p>
+          <div class="flex-1 flex items-end gap-1.5 pb-2 border-b border-lime/20">
+            {# id="chart-bar-{hari}" → diperbarui WebSocket (Langkah 5) #}
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-sen" class="w-full bg-lime/40 chart-bar" style="--h:52px; height:0"></div>
+              <span class="text-[8px] font-grotesk text-lime/50">Sen</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-sel" class="w-full bg-lime/40 chart-bar" style="--h:68px; height:0; animation-delay:0.1s"></div>
+              <span class="text-[8px] font-grotesk text-lime/50">Sel</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-rab" class="w-full bg-lime/40 chart-bar" style="--h:60px; height:0; animation-delay:0.2s"></div>
+              <span class="text-[8px] font-grotesk text-lime/50">Rab</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-kam" class="w-full bg-lime/40 chart-bar" style="--h:75px; height:0; animation-delay:0.3s"></div>
+              <span class="text-[8px] font-grotesk text-lime/50">Kam</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-jum" class="w-full bg-lime/40 chart-bar" style="--h:70px; height:0; animation-delay:0.4s"></div>
+              <span class="text-[8px] font-grotesk text-lime/50">Jum</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-sab" class="w-full bg-lime/40 chart-bar" style="--h:80px; height:0; animation-delay:0.5s"></div>
+              <span class="text-[8px] font-grotesk text-lime/50">Sab</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div id="chart-bar-mng" class="w-full bg-lime chart-bar" style="--h:90px; height:0; animation-delay:0.6s"></div>
+              <span class="text-[8px] font-grotesk text-lime font-bold">Mng</span>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-[9px] font-grotesk text-lime/50">Min: <span id="ai-trend-min">41.3T</span></span>
+            <span class="text-[9px] font-grotesk text-lime/50">Maks: <span id="ai-trend-maks">46.2T</span></span>
+          </div>
+          <div class="mt-3 border border-lime/30 p-2">
+            <p class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase">Proyeksi Panen</p>
+            <p id="ai-proyeksi-tanggal" class="text-canvas font-grotesk font-bold text-sm">14 Oktober 2026</p>
+            <p class="text-lime/50 font-inter text-[10px]">± 3 hari margin</p>
+          </div>
+        </div>
+
+        {# ── Digital Twin Placeholder ── #}
+        {# Area ini dicadangkan untuk embed build WebGL Unity.     #}
+        {# Ganti isi <div> ini dengan <iframe src="unity/...">     #}
+        {# saat build Unity WebGL sudah tersedia.                  #}
+        <div id="digital-twin-placeholder"
+             class="border-2 border-lime/40 relative overflow-hidden flex flex-col items-center justify-center min-h-[200px]"
+             style="background: linear-gradient(135deg, #1A3626 0%, #0f2018 50%, #1A3626 100%);">
+
+          {# Grid geometris latar belakang #}
+          <div class="absolute inset-0 opacity-20" style="
+            background-image:
+              linear-gradient(#D9F2C415 1px, transparent 1px),
+              linear-gradient(90deg, #D9F2C415 1px, transparent 1px);
+            background-size: 24px 24px;">
+          </div>
+
+          {# Cincin dekoratif (visual Digital Twin) #}
+          <div class="relative z-10 flex flex-col items-center gap-3 p-4">
+            <div class="w-16 h-16 border-2 border-lime/50 flex items-center justify-center"
+                 style="outline: 4px solid #D9F2C420; outline-offset: 4px;">
+              <div class="w-8 h-8 border border-lime/30 flex items-center justify-center">
+                <div class="w-4 h-4 bg-lime/20 border border-lime/50"></div>
+              </div>
+            </div>
+            <div class="text-center">
+              <p class="text-[9px] font-grotesk font-bold text-lime/80 tracking-widest uppercase">Digital Twin</p>
+              <p class="text-[8px] font-inter text-lime/40 mt-0.5">WebGL Unity · Segera Hadir</p>
+            </div>
+            {# Label siap-embed #}
+            <div class="border border-lime/20 px-3 py-1 mt-1">
+              <p class="text-[8px] font-grotesk text-lime/30 tracking-widest text-center">
+                ← ganti div ini dengan &lt;iframe&gt; Unity
+              </p>
+            </div>
+          </div>
+
+        </div>{# /digital-twin-placeholder #}
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- MODAL KONFIGURASI LAHAN -->
+<!-- ============================================================ -->
+<div id="modal-konfigurasi" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <!-- Overlay gelap transparan -->
+  <div id="modal-overlay" class="absolute inset-0 bg-black/70 backdrop-blur-sm cursor-pointer"></div>
+  
+  <!-- Konten Modal -->
+  <div class="relative z-10 w-full max-w-md bg-forest border-2 border-lime p-6 shadow-2xl">
+    
+    <!-- Header Modal -->
+    <div class="flex items-center justify-between mb-6 border-b border-lime/20 pb-4">
+      <div>
+        <p class="text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-1">Setup Fundamental</p>
+        <h3 class="text-xl font-grotesk font-bold text-canvas leading-none">Konfigurasi Lahan</h3>
+      </div>
+      <button id="btn-tutup-konfigurasi" class="text-lime/60 hover:text-lime p-1 cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="square" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Form -->
+    <form id="form-konfigurasi" class="space-y-4">
+      
+      <!-- Input Luas Lahan -->
+      <div>
+        <label for="input-luas" class="block text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-1.5">Luas Lahan (Hektar)</label>
+        <input type="number" id="input-luas" name="luas_hektar" step="0.1" min="0.1" required
+               class="w-full bg-forest border border-lime/40 text-canvas px-3 py-2 text-sm font-inter focus:outline-none focus:border-lime placeholder-canvas/30"
+               placeholder="Contoh: 3.0">
+      </div>
+
+      <!-- Dropdown Komoditas -->
+      <div>
+        <label for="input-komoditas" class="block text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-1.5">Komoditas & Varietas</label>
+        <select id="input-komoditas" name="komoditas" required
+                class="w-full bg-forest border border-lime/40 text-canvas px-3 py-2 text-sm font-inter focus:outline-none focus:border-lime appearance-none cursor-pointer">
+          <option value="" disabled selected class="text-canvas/30">-- Pilih Varietas --</option>
+          <option value="Kentang Granola">Kentang Granola</option>
+          <option value="Kentang Atlantik">Kentang Atlantik</option>
+          <option value="Cabai Rawit">Cabai Rawit</option>
+        </select>
+      </div>
+
+      <!-- Input Tanggal Tanam -->
+      <div>
+        <label for="input-tanggal" class="block text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-1.5">Tanggal Mulai Tanam</label>
+        <input type="date" id="input-tanggal" name="tanggal_tanam" required
+               class="w-full bg-forest border border-lime/40 text-canvas px-3 py-2 text-sm font-inter focus:outline-none focus:border-lime [color-scheme:dark]">
+      </div>
+
+      <!-- Input Kerapatan Tanam -->
+      <div>
+        <label for="input-populasi" class="block text-[9px] font-grotesk text-lime/60 tracking-widest uppercase mb-1.5">Populasi Bibit (Total)</label>
+        <input type="number" id="input-populasi" name="populasi_bibit" min="1000" required
+               class="w-full bg-forest border border-lime/40 text-canvas px-3 py-2 text-sm font-inter focus:outline-none focus:border-lime placeholder-canvas/30"
+               placeholder="Contoh: 15000">
+      </div>
+
+      <!-- Pesan Feedback -->
+      <div id="konfigurasi-feedback" class="hidden text-[10px] font-inter text-lime mt-2 p-2 border border-lime/20 bg-lime/10"></div>
+
+      <!-- Tombol Submit -->
+      <div class="pt-4 mt-6 border-t border-lime/20 flex justify-end gap-3">
+        <button type="button" id="btn-batal-konfigurasi"
+                class="px-4 py-2 border border-lime/40 text-[9px] font-grotesk font-bold text-lime/80 tracking-widest uppercase hover:bg-lime/10 transition-colors cursor-pointer">
+          Batal
+        </button>
+        <button type="submit" id="btn-simpan-konfigurasi"
+                class="px-4 py-2 bg-lime text-forest border border-lime text-[9px] font-grotesk font-bold tracking-widest uppercase hover:bg-lime-deep transition-colors cursor-pointer">
+          Simpan Data
+        </button>
+      </div>
+    </form>
+    
+  </div>
+</div>

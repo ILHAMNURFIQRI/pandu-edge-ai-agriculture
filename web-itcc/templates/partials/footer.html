@@ -1,0 +1,31 @@
+{# ============================================================ #}
+{# partials/footer.html — Footer PANDU                         #}
+{# ============================================================ #}
+<footer class="bg-forest">
+  <div class="max-w-screen-xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-3">
+
+    {# ── Logo mini ── #}
+    <div class="flex items-center gap-3">
+      <div class="w-6 h-6 bg-lime flex items-center justify-center">
+        <span class="text-forest font-grotesk font-bold text-[10px]">P</span>
+      </div>
+      <span class="text-canvas/60 font-grotesk text-xs tracking-widest uppercase">PANDU · Smart Agriculture System</span>
+    </div>
+
+    {# ── Info versi firmware ── #}
+    <div class="flex items-center gap-4 text-[10px] font-grotesk text-canvas/40 tracking-widest uppercase flex-wrap justify-center">
+      <span>ESP32-S3 Firmware v2.4.1</span>
+      <span>·</span>
+      <span>Coral TPU Runtime v3.0</span>
+      <span>·</span>
+      <span>Edge-only · No Cloud</span>
+    </div>
+
+    {# ── Indikator online ── #}
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 bg-lime-deep pulse-active block"></span>
+      <span class="text-[10px] font-grotesk text-lime/60 tracking-widest uppercase">Sistem Online</span>
+    </div>
+
+  </div>
+</footer>

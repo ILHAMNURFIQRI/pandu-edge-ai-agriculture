@@ -1,0 +1,186 @@
+{# ============================================================ #}
+{# dashboard/actuator_panel.html                                #}
+{# Panel Aktuator: Pompa Air + Solenoid Valve + Log Sistem      #}
+{# ID elemen dengan prefix "act-" siap untuk update WebSocket  #}
+{# ============================================================ #}
+<section id="actuators" class="border-b-2 border-forest">
+  <div class="max-w-screen-xl mx-auto px-6 py-10">
+
+    {# ── Header Seksi ── #}
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <p class="text-[10px] font-grotesk text-muted tracking-widest uppercase mb-1">Kontrol Presisi</p>
+        <h2 class="text-2xl font-grotesk font-bold text-forest leading-none">Panel Aktuator</h2>
+      </div>
+      <span class="text-[10px] font-grotesk text-muted">Dikendalikan oleh: Edge AI Otomatis</span>
+    </div>
+
+    <div class="grid grid-cols-12 gap-4 md:gap-6">
+
+      {# ── Aktuator 1: Pompa Air Utama (AKTIF) ── #}
+      <div class="col-span-12 md:col-span-6 lg:col-span-5">
+        <div class="geo-card corner-mark h-full p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+              <div id="pump-icon" class="actuator-on w-7 h-7 flex items-center justify-center border-2 border-forest">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="square" stroke-width="2" d="M12 1.5C7.5 1.5 4 5 4 9.5c0 5.25 8 13 8 13s8-7.75 8-13C20 5 16.5 1.5 12 1.5z"/>
+                  <circle cx="12" cy="9" r="2.5" stroke-width="2"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Aktuator 01</p>
+                <p class="font-grotesk font-bold text-forest text-sm">Pompa Air Utama</p>
+              </div>
+            </div>
+            {# Tombol toggle pompa — memanggil toggleActuator() dari scripts_global.html #}
+            <button id="pump-toggle"
+                    onclick="toggleActuator('pump-toggle','pump-status','pump-indicator','pump-box')"
+                    class="actuator-on border-2 border-forest text-[9px] font-grotesk font-bold tracking-widest uppercase px-6 py-3 md:px-4 md:py-2 tr hover:bg-lime hover:text-forest cursor-pointer">
+              AKTIF
+            </button>
+          </div>
+
+          {# Box status pompa — warna berubah saat toggle #}
+          <div id="pump-box" class="geo-card-lime p-4 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span id="pump-indicator" class="w-2.5 h-2.5 bg-forest pulse-active block"></span>
+              <span id="pump-status" class="text-[9px] font-grotesk font-bold text-forest tracking-widest uppercase">
+                Sistem Irigasi Berjalan
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3">
+              <div class="text-center">
+                <p id="act-pump-lpm" class="font-grotesk font-bold text-forest text-xl">2.4</p>
+                <p class="text-[8px] font-grotesk text-muted tracking-widest">L/min</p>
+              </div>
+              <div class="text-center border-x border-forest/20">
+                <p id="act-pump-psi" class="font-grotesk font-bold text-forest text-xl">68</p>
+                <p class="text-[8px] font-grotesk text-muted tracking-widest">PSI</p>
+              </div>
+              <div class="text-center">
+                <p id="act-pump-kw" class="font-grotesk font-bold text-forest text-xl">1.2</p>
+                <p class="text-[8px] font-grotesk text-muted tracking-widest">kW</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[9px] font-grotesk text-muted mb-1 tracking-widest uppercase">
+              <span>Flow Rate</span><span id="act-pump-flow-label">2.4 / 4.0 L/min</span>
+            </div>
+            <div class="w-full h-2 bg-lime">
+              <div id="act-pump-bar" class="h-2 bg-forest bar-fill" style="--fill:60%"></div>
+            </div>
+          </div>
+
+          <div class="mt-4 border-t-2 border-forest/10 pt-4 flex justify-between text-[9px] font-grotesk text-muted">
+            <span class="tracking-widest uppercase">Zona Aktif</span>
+            <span id="act-pump-zona" class="font-semibold text-forest">Zona A · B · C</span>
+          </div>
+          <div class="flex justify-between text-[9px] font-grotesk text-muted mt-1">
+            <span class="tracking-widest uppercase">Durasi Otomatis</span>
+            <span id="act-pump-durasi" class="font-semibold text-forest">35 menit/siklus</span>
+          </div>
+        </div>
+      </div>
+
+      {# ── Aktuator 2: Solenoid Valve Nutrisi (NON-AKTIF) ── #}
+      <div class="col-span-12 md:col-span-6 lg:col-span-5">
+        <div class="geo-card h-full p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+              <div class="actuator-off w-7 h-7 flex items-center justify-center border-2 border-forest">
+                <svg class="w-3.5 h-3.5 text-forest" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="square" stroke-width="2" d="M4 8h16M4 16h16M8 4l-4 8 4 8M16 4l4 8-4 8"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Aktuator 02</p>
+                <p class="font-grotesk font-bold text-forest text-sm">Solenoid Valve Nutrisi</p>
+              </div>
+            </div>
+            {# Tombol toggle valve #}
+            <button id="valve-toggle"
+                    onclick="toggleActuator('valve-toggle','valve-status','valve-indicator','valve-box')"
+                    class="actuator-off border-2 border-forest text-[9px] font-grotesk font-bold tracking-widest uppercase px-6 py-3 md:px-4 md:py-2 tr hover:bg-lime cursor-pointer">
+              NON-AKTIF
+            </button>
+          </div>
+
+          {# Box status valve #}
+          <div id="valve-box" class="border-2 border-forest/20 bg-white p-4 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span id="valve-indicator" class="w-2.5 h-2.5 bg-muted block"></span>
+              <span id="valve-status" class="text-[9px] font-grotesk font-bold text-muted tracking-widest uppercase">
+                Sistem Fertigasi Standby
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3">
+              <div class="text-center">
+                <p id="act-valve-lpm" class="font-grotesk font-bold text-muted text-xl">0.0</p>
+                <p class="text-[8px] font-grotesk text-muted/60 tracking-widest">L/min</p>
+              </div>
+              <div class="text-center border-x border-forest/10">
+                <p class="font-grotesk font-bold text-muted text-xl">—</p>
+                <p class="text-[8px] font-grotesk text-muted/60 tracking-widest">BAR</p>
+              </div>
+              <div class="text-center">
+                <p id="act-valve-kw" class="font-grotesk font-bold text-muted text-xl">0.0</p>
+                <p class="text-[8px] font-grotesk text-muted/60 tracking-widest">kW</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[9px] font-grotesk text-muted mb-1 tracking-widest uppercase">
+              <span>Flow Rate</span><span>0.0 / 2.0 L/min</span>
+            </div>
+            <div class="w-full h-2 bg-lime/30">
+              <div class="h-2 bg-muted" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="mt-4 border-t-2 border-forest/10 pt-4 flex justify-between text-[9px] font-grotesk text-muted">
+            <span class="tracking-widest uppercase">Jadwal Berikutnya</span>
+            <span id="act-valve-jadwal" class="font-semibold text-forest">06:00 WIB (besok)</span>
+          </div>
+          <div class="flex justify-between text-[9px] font-grotesk text-muted mt-1">
+            <span class="tracking-widest uppercase">Larutan Pupuk</span>
+            <span class="font-semibold text-forest">NPK 20-20-20 · 5%</span>
+          </div>
+        </div>
+      </div>
+
+      {# ── Log Sistem Real-Time ── #}
+      <div class="col-span-12 lg:col-span-2 geo-card p-5 flex flex-col">
+        <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase mb-3">Log Sistem</p>
+        {# id="system-log-list" → baris baru ditambahkan oleh WebSocket (Langkah 5) #}
+        <div id="system-log-list" class="flex-1 space-y-2 overflow-y-auto max-h-64">
+          <div class="border-l-2 border-forest pl-2">
+            <p class="text-[9px] font-inter text-muted">23:51 · Pompa aktif. Kelembapan 68% → target 75%</p>
+          </div>
+          <div class="border-l-2 border-lime-deep pl-2">
+            <p class="text-[9px] font-inter text-muted">23:48 · AI prediksi diperbarui: 46.2T</p>
+          </div>
+          <div class="border-l-2 border-forest/30 pl-2">
+            <p class="text-[9px] font-inter text-muted">23:40 · Valve nutrisi selesai. Durasi 20 menit</p>
+          </div>
+          <div class="border-l-2 border-forest/30 pl-2">
+            <p class="text-[9px] font-inter text-muted">23:30 · pH kembali optimal: 6.8</p>
+          </div>
+          <div class="border-l-2 border-forest/30 pl-2">
+            <p class="text-[9px] font-inter text-muted">22:55 · Sensor cahaya peak 58k Lux</p>
+          </div>
+          <div class="border-l-2 border-forest/30 pl-2">
+            <p class="text-[9px] font-inter text-muted">22:00 · Irigasi Zona C selesai</p>
+          </div>
+          <div class="border-l-2 border-forest/30 pl-2">
+            <p class="text-[9px] font-inter text-muted">21:30 · Model retrain acc: 94.7%</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

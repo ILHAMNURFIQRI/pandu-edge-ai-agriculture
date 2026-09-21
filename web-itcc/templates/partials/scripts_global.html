@@ -1,0 +1,167 @@
+{# ============================================================ #}
+{# partials/scripts_global.html                                 #}
+{# JavaScript utilitas bawaan template PANDU (non-WebSocket):   #}
+{#   - Live clock                                               #}
+{#   - Actuator toggle                                          #}
+{#   - Smooth scroll                                            #}
+{#   - Intersection Observer (animasi bar/chart on scroll)      #}
+{#   - Nav active state on scroll                               #}
+{# ============================================================ #}
+<script>
+  /* ─────────────────────────────────────────
+     Live Clock — memperbarui elemen #live-time
+     setiap detik menggunakan zona waktu lokal
+  ───────────────────────────────────────── */
+  function updateClock() {
+    const el = document.getElementById('live-time');
+    if (!el) return;
+    el.textContent = new Date().toLocaleTimeString('id-ID', { hour12: false });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ─────────────────────────────────────────
+     Actuator Toggle
+     Mengubah tampilan tombol ON ↔ OFF dan
+     memperbarui warna indikator + status teks
+  ───────────────────────────────────────── */
+  function toggleActuator(btnId, statusId, indicatorId, boxId) {
+    const btn       = document.getElementById(btnId);
+    const status    = document.getElementById(statusId);
+    const indicator = document.getElementById(indicatorId);
+    const box       = document.getElementById(boxId);
+    const isOn      = btn.classList.contains('actuator-on');
+
+    if (isOn) {
+      btn.classList.replace('actuator-on', 'actuator-off');
+      btn.textContent = 'NON-AKTIF';
+      indicator.classList.remove('bg-forest', 'pulse-active');
+      indicator.classList.add('bg-muted');
+      status.classList.replace('text-forest', 'text-muted');
+      if (box) { box.style.borderColor = '#1A362633'; box.style.background = '#fff'; }
+      const msg = btnId === 'pump-toggle' ? 'Sistem Irigasi Standby' : 'Sistem Fertigasi Standby';
+      status.textContent = msg;
+      
+      // Panggil Toast
+      if (typeof showToast === 'function') {
+        showToast(`Dimatikan: ${msg}`, 'warning');
+      }
+    } else {
+      btn.classList.replace('actuator-off', 'actuator-on');
+      btn.textContent = 'AKTIF';
+      indicator.classList.remove('bg-muted');
+      indicator.classList.add('bg-forest', 'pulse-active');
+      status.classList.replace('text-muted', 'text-forest');
+      if (box) { box.style.borderColor = '#1A3626'; box.style.background = '#D9F2C4'; }
+      const msg = btnId === 'pump-toggle' ? 'Sistem Irigasi Berjalan' : 'Sistem Fertigasi Berjalan';
+      status.textContent = msg;
+
+      // Panggil Toast
+      if (typeof showToast === 'function') {
+        showToast(`Diaktifkan: ${msg}`, 'success');
+      }
+    }
+  }
+
+  /* ─────────────────────────────────────────
+     Smooth Scroll (untuk tautan anchor di luar Navbar)
+     Navbar SPA menggunakan data-target-view, bukan href.
+     Blok ini tetap aktif untuk link anchor lain (misal tombol hero).
+  ───────────────────────────────────────── */
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    });
+  });
+
+  /* ─────────────────────────────────────────
+     Intersection Observer
+     Memicu animasi bar-fill dan chart-bar
+     hanya saat elemen terlihat di viewport
+     (paused saat di luar, running saat masuk)
+  ───────────────────────────────────────── */
+  const barObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.style.animationPlayState = 'running';
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.bar-fill, .chart-bar').forEach(el => {
+    el.style.animationPlayState = 'paused';
+    barObserver.observe(el);
+  });
+
+  /* ─────────────────────────────────────────
+     Nav Active State on Scroll
+     CATATAN: Logika ini dinonaktifkan karena Navbar PANDU
+     kini menggunakan sistem SPA (data-target-view).
+     Status aktif menu dikelola oleh fungsiAktifkanView()
+     di script SPA pada index.html.
+  ───────────────────────────────────────── */
+  /* (disabled — digantikan oleh SPA JS) */
+  /* ─────────────────────────────────────────
+     Sistem Toast Notification
+     Menampilkan notifikasi mengambang dengan desain geometris.
+     Tipe yang didukung: 'success', 'warning', 'error', 'info'
+  ───────────────────────────────────────── */
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    // Konfigurasi warna berdasarkan tipe
+    let borderColor = 'border-lime';
+    let bgColor = 'bg-forest';
+    let textColor = 'text-lime';
+    let icon = '';
+
+    if (type === 'success') {
+      borderColor = 'border-lime'; bgColor = 'bg-forest'; textColor = 'text-lime';
+      icon = '<span class="w-2 h-2 bg-lime-deep pulse-active block"></span>';
+    } else if (type === 'warning') {
+      borderColor = 'border-yellow-500'; bgColor = 'bg-yellow-900'; textColor = 'text-yellow-400';
+      icon = '<span class="w-2 h-2 bg-yellow-500 pulse-active block"></span>';
+    } else if (type === 'error') {
+      borderColor = 'border-red-500'; bgColor = 'bg-red-900'; textColor = 'text-red-400';
+      icon = '<span class="w-2 h-2 bg-red-500 pulse-active block"></span>';
+    } else {
+      borderColor = 'border-lime/50'; bgColor = 'bg-forest'; textColor = 'text-canvas';
+      icon = '<span class="w-2 h-2 bg-canvas block"></span>';
+    }
+
+    // Buat elemen Toast
+    const toast = document.createElement('div');
+    toast.className = `flex items-center gap-3 border-2 ${borderColor} ${bgColor} shadow-lg px-4 py-3 transform transition-all duration-300 translate-y-8 opacity-0`;
+    
+    toast.innerHTML = `
+      ${icon}
+      <span class="text-[10px] font-grotesk font-bold tracking-widest uppercase ${textColor}">${message}</span>
+    `;
+
+    // Tambahkan ke container
+    container.appendChild(toast);
+
+    // Animasi masuk (masuk dari bawah + fade in)
+    requestAnimationFrame(() => {
+      toast.classList.remove('translate-y-8', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+    });
+
+    // Hilangkan setelah 3 detik
+    setTimeout(() => {
+      // Animasi keluar
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('translate-y-2', 'opacity-0');
+      
+      // Hapus elemen dari DOM setelah animasi selesai
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
+  }
+</script>

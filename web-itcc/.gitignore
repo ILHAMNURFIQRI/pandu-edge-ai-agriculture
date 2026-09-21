@@ -1,0 +1,33 @@
+# ─── Python & Virtual Environment ─────────────────────────
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ─── Django ────────────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# ─── Environment Variables (RAHASIA!) ─────────────────────
+.env
+*.env
+
+# ─── Static Files (dikompilasi saat deploy) ───────────────
+staticfiles/
+static/CACHE/
+
+# ─── IDE & Editor ─────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── OS ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

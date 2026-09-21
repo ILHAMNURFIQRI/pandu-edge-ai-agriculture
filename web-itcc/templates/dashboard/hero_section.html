@@ -1,0 +1,108 @@
+{# ============================================================ #}
+{# dashboard/hero_section.html                                  #}
+{# Hero / Status Sistem bagian atas dashboard PANDU             #}
+{# ============================================================ #}
+<section id="hero" class="hero-grid-bg border-b-2 border-forest relative overflow-hidden">
+  <div class="max-w-screen-xl mx-auto px-6 py-16 md:py-24">
+    <div class="grid grid-cols-12 gap-4 md:gap-6 items-start">
+
+      {# ── Kiri: Headline & Deskripsi ── #}
+      <div class="col-span-12 md:col-span-7 lg:col-span-6">
+
+        {# Tag line #}
+        <div class="inline-flex items-center gap-2 border border-forest bg-lime px-3 py-1 mb-6">
+          <span class="w-2 h-2 bg-forest block"></span>
+          <span class="text-forest text-[10px] font-grotesk font-semibold tracking-widest uppercase">Smart Agriculture · Business Intelligence</span>
+        </div>
+
+        <h1 class="font-grotesk font-bold text-forest text-4xl md:text-5xl lg:text-6xl leading-none tracking-tight mb-4">
+          PANDU<br/>
+          <span class="font-light text-3xl md:text-4xl leading-tight block mt-1">
+            Intelijen Bisnis<br/>Agrikultur Berbasis<br/>Edge&nbsp;AI
+          </span>
+        </h1>
+
+        <p class="text-muted font-inter text-sm md:text-base leading-relaxed max-w-md mt-5 mb-8">
+          Sistem akuisisi data lingkungan dan eksekusi model ML secara lokal menggunakan
+          <strong class="text-forest">ESP32</strong> &amp;
+          <strong class="text-forest">Google Coral Edge TPU</strong> — tanpa ketergantungan cloud.
+          Prediksi hasil panen, kontrol irigasi, dan fertigasi presisi dalam satu platform.
+        </p>
+
+        {# Tombol CTA #}
+        <div class="flex flex-wrap gap-3">
+          <a href="#sensors"
+             class="bg-forest text-canvas font-grotesk font-semibold text-xs tracking-widest uppercase px-6 py-4 md:px-6 md:py-3 tr hover:bg-lime hover:text-forest border-2 border-forest">
+            Akses Dashboard
+          </a>
+          <a href="#prediction"
+             class="bg-canvas text-forest font-grotesk font-semibold text-xs tracking-widest uppercase px-6 py-4 md:px-6 md:py-3 tr hover:bg-lime border-2 border-forest">
+            Lihat Prediksi
+          </a>
+        </div>
+      </div>
+
+      {# ── Kanan: Panel Status Sistem Mini ── #}
+      <div class="col-span-12 md:col-span-5 lg:col-span-6 flex flex-col gap-4 md:items-end mt-10 md:mt-0">
+
+        {# Kartu Status Sistem Aktif #}
+        <div class="geo-card corner-mark w-full max-w-sm p-5">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-[10px] font-grotesk font-semibold text-muted tracking-widest uppercase">Status Sistem</span>
+            <div class="flex items-center gap-2">
+              <span id="system-status-dot" class="w-2.5 h-2.5 bg-forest pulse-active block"></span>
+              <span id="system-status-text" class="text-[10px] text-forest font-grotesk font-bold tracking-widest uppercase">Berjalan</span>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-inter text-muted">Prosesor Edge AI</span>
+              <span class="text-xs font-grotesk font-semibold text-forest">Google Coral TPU</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-inter text-muted">Mikrokontroler</span>
+              <span class="text-xs font-grotesk font-semibold text-forest">ESP32-S3</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-inter text-muted">Latensi Inferensi</span>
+              {# id="latency-val" → diperbarui oleh WebSocket (Langkah 5) #}
+              <span id="latency-val" class="text-xs font-grotesk font-semibold text-forest">12 ms</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-inter text-muted">Uptime</span>
+              <span id="uptime-val" class="text-xs font-grotesk font-semibold text-forest">18 j 43 m</span>
+            </div>
+
+            <div class="section-rule pt-3 mt-3">
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">CPU Load</span>
+                <span id="cpu-val" class="text-[10px] font-grotesk font-bold text-forest">34%</span>
+              </div>
+              <div class="w-full h-1.5 bg-lime mt-2">
+                <div id="cpu-bar" class="h-1.5 bg-forest bar-fill" style="--fill:34%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Memori</span>
+                <span id="mem-val" class="text-[10px] font-grotesk font-bold text-forest">51%</span>
+              </div>
+              <div class="w-full h-1.5 bg-lime mt-2">
+                <div id="mem-bar" class="h-1.5 bg-forest bar-fill" style="--fill:51%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Live timestamp — diperbarui oleh pandu-ws.js dan live clock #}
+        <div class="geo-card-lime w-full max-w-sm px-4 py-3 flex items-center justify-between">
+          <span class="text-[10px] font-grotesk text-forest/60 tracking-widest uppercase">Pembaruan Terakhir</span>
+          <span id="live-time" class="text-xs font-grotesk font-bold text-forest live-cursor">--:--:--</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>

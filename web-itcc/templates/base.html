@@ -1,0 +1,164 @@
+{# ============================================================ #}
+{# base.html — Template induk PANDU                            #}
+{# Memuat: Tailwind CDN, Google Fonts, CSS kustom,             #}
+{#         dan blok yang dapat di-override oleh child template  #}
+{# ============================================================ #}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  {# ── SEO: Title & Meta (dapat di-override) ── #}
+  <title>{% block title %}PANDU — Intelijen Bisnis Agrikultur Berbasis Edge AI{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}PANDU adalah sistem Smart Agriculture berbasis Edge AI menggunakan ESP32 dan Google Coral Edge TPU untuk pengawasan real-time, kontrol aktuator, dan prediksi hasil panen secara lokal.{% endblock %}" />
+
+  {# ── Tailwind CSS via CDN ── #}
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  {# ── Google Fonts: Space Grotesk & Inter ── #}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  {# ── Konfigurasi Tailwind: warna & font kustom PANDU ── #}
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'forest':    '#1A3626',
+            'lime':      '#D9F2C4',
+            'canvas':    '#FFFFFF',
+            'ink':       '#1A3626',
+            'muted':     '#6B7A72',
+            'border':    '#1A3626',
+            'lime-deep': '#B5E48C',
+          },
+          fontFamily: {
+            grotesk: ['Space Grotesk', 'sans-serif'],
+            inter:   ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  {# ── CSS Kustom PANDU: JANGAN UBAH ── #}
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      background-color: #FFFFFF;
+      color: #1A3626;
+    }
+
+    /* Geometric card base */
+    .geo-card      { border: 2px solid #1A3626; background: #FFFFFF; position: relative; }
+    .geo-card-lime { border: 2px solid #1A3626; background: #D9F2C4; position: relative; }
+
+    /* Tick mark corner decoration */
+    .corner-mark::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px;
+      width: 14px; height: 14px;
+      background: #1A3626;
+    }
+
+    /* Status pulse dot */
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .pulse-active { animation: pulse-dot 1.8s ease-in-out infinite; }
+
+    /* Progress bar fill */
+    @keyframes fill-bar { from { width: 0%; } to { width: var(--fill); } }
+    .bar-fill { animation: fill-bar 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+    /* Counter number animation */
+    @keyframes count-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .stat-number { animation: count-up 0.7s ease-out forwards; }
+
+    /* Hover states */
+    .geo-card:hover      { background: #F7FDF3; }
+    .geo-card-lime:hover { background: #C8EDB0; }
+
+    /* Actuator toggle */
+    .actuator-on  { background: #1A3626; color: #D9F2C4; }
+    .actuator-off { background: #FFFFFF; color: #1A3626; }
+
+    /* Section divider line */
+    .section-rule { border-top: 2px solid #1A3626; }
+
+    /* AI central ring (flat outline) */
+    .ai-ring {
+      border: 3px solid #1A3626;
+      outline: 6px solid #D9F2C4;
+      outline-offset: 0px;
+    }
+
+    /* Scrollbar minimal */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #fff; }
+    ::-webkit-scrollbar-thumb { background: #1A3626; }
+
+    /* Navbar active underline */
+    .nav-active { border-bottom: 3px solid #D9F2C4; }
+
+    /* Geometric grid overlay on hero */
+    .hero-grid-bg {
+      background-image:
+        linear-gradient(#1A362618 1px, transparent 1px),
+        linear-gradient(90deg, #1A362618 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Transition utilities */
+    .tr { transition: all 0.2s ease; }
+
+    /* Live cursor blink */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .live-cursor::after {
+      content: '|';
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+      color: #1A3626;
+    }
+
+    /* Chart bar grow */
+    @keyframes grow-bar { from { height: 0; } to { height: var(--h); } }
+    .chart-bar { animation: grow-bar 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+    /* WebSocket status indicator */
+    .ws-connected    { color: #B5E48C; }
+    .ws-disconnected { color: #ef4444; }
+    .ws-reconnecting { color: #f59e0b; }
+  </style>
+
+  {# ── Blok untuk CSS/JS tambahan dari child template ── #}
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="min-h-screen">
+
+  {# ── Navbar: dimuat dari partial template ── #}
+  {% include 'partials/navbar.html' %}
+
+  {# ── Konten utama: diisi oleh child template ── #}
+  {% block content %}{% endblock %}
+
+  {# ── Footer: dimuat dari partial template ── #}
+  {% include 'partials/footer.html' %}
+
+  {# ── JavaScript Global PANDU ── #}
+  {% include 'partials/scripts_global.html' %}
+
+  {# ── Blok untuk JS tambahan dari child template (misal: WebSocket) ── #}
+  {% block extra_scripts %}{% endblock %}
+
+  {# ── Toast Notification Container ── #}
+  <!-- Container untuk menampung toast secara dinamis (di kanan bawah layar) -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+</body>
+</html>

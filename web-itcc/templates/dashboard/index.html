@@ -1,0 +1,845 @@
+{% extends 'base.html' %}
+{% load static %}
+{# ============================================================ #}
+{# dashboard/index.html — Halaman utama dashboard PANDU         #}
+{# Extends base.html dan merakit semua partial section          #}
+{# SPA: View Operasional + View Analitik dikendalikan oleh JS   #}
+{# ============================================================ #}
+{% block title %}PANDU — Intelijen Bisnis Agrikultur Berbasis Edge AI{% endblock %}
+
+{% block content %}
+  {# ── Data sensor awal dari server (render pertama, sebelum WebSocket aktif) ── #}
+  {# Disimpan di tag <script> sebagai variabel JS global untuk diakses pandu-ws.js #}
+  {{ data_sensor_awal|json_script:"pandu-init-data" }}
+  <script>
+    /* Data inisial dari Django view (hasil query MongoDB) */
+    const PANDU_INIT_DATA = JSON.parse(document.getElementById('pandu-init-data').textContent);
+  </script>
+
+  {# ═══════════════════════════════════════════════════════════ #}
+  {# VIEW OPERASIONAL — Hero, Sensor, Prediksi, Aktuator         #}
+  {# Terlihat secara default; disembunyikan saat Analitik aktif  #}
+  {# ═══════════════════════════════════════════════════════════ #}
+  <div id="view-operasional">
+    {% include 'dashboard/hero_section.html' %}
+    {% include 'dashboard/sensor_panel.html' %}
+    {% include 'dashboard/prediction_center.html' %}
+    {% include 'dashboard/actuator_panel.html' %}
+  </div>
+
+  {# ═══════════════════════════════════════════════════════════ #}
+  {# VIEW ANALITIK — Grafik Historis & Panel Ekspor Laporan      #}
+  {# Disembunyikan secara default; dimunculkan via JS SPA        #}
+  {# ═══════════════════════════════════════════════════════════ #}
+  <div id="view-analitik" class="hidden">
+
+    {# ── Header Halaman Analitik ── #}
+    <section class="hero-grid-bg border-b-2 border-forest">
+      <div class="max-w-screen-xl mx-auto px-6 py-10 md:py-14">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+
+          {# Judul halaman #}
+          <div>
+            <div class="inline-flex items-center gap-2 border border-forest bg-lime px-3 py-1 mb-4">
+              <span class="w-2 h-2 bg-forest block"></span>
+              <span class="text-forest text-[10px] font-grotesk font-semibold tracking-widest uppercase">Analitik · Laporan Historis</span>
+            </div>
+            <h2 class="font-grotesk font-bold text-forest text-3xl md:text-4xl leading-none tracking-tight">
+              Dasbor Analitik
+            </h2>
+            <p class="text-muted font-inter text-sm mt-2 max-w-lg">
+              Visualisasi tren historis sensor dan ekspor data laporan ke berbagai format untuk analisis lanjutan.
+            </p>
+          </div>
+
+          {# Selector rentang waktu #}
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Rentang:</span>
+            <div class="flex gap-1" id="grup-rentang-waktu">
+              <button data-rentang="7"  class="btn-rentang aktif-rentang text-[10px] font-grotesk font-bold tracking-widest uppercase px-3 py-1.5 border-2 border-forest bg-forest text-lime tr">7H</button>
+              <button data-rentang="30" class="btn-rentang text-[10px] font-grotesk font-bold tracking-widest uppercase px-3 py-1.5 border-2 border-forest bg-canvas text-forest tr hover:bg-lime">30H</button>
+              <button data-rentang="90" class="btn-rentang text-[10px] font-grotesk font-bold tracking-widest uppercase px-3 py-1.5 border-2 border-forest bg-canvas text-forest tr hover:bg-lime">90H</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    {# ── Grid Utama: Grafik + Panel Ekspor ── #}
+    <section class="bg-canvas border-b-2 border-forest">
+      <div class="max-w-screen-xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {# ══════════════════════════════════════════ #}
+        {# KOLOM KIRI (2/3): Area Grafik Historis    #}
+        {# ══════════════════════════════════════════ #}
+        <div class="lg:col-span-2 flex flex-col gap-6">
+
+          {# ── Grafik 1: Tren Kelembapan Tanah ── #}
+          <div class="geo-card corner-mark p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-[10px] font-grotesk font-semibold text-muted tracking-widest uppercase">Tren Historis</p>
+                <h3 class="text-base font-grotesk font-bold text-forest mt-0.5">Kelembapan Tanah</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                {# Legenda #}
+                <span class="flex items-center gap-1.5 text-[10px] font-grotesk text-muted tracking-widest uppercase">
+                  <span class="w-3 h-0.5 bg-forest block"></span>Aktual
+                </span>
+                <span class="flex items-center gap-1.5 text-[10px] font-grotesk text-lime-deep tracking-widest uppercase">
+                  <span class="w-3 h-0.5 bg-lime-deep block"></span>Optimal
+                </span>
+              </div>
+            </div>
+            {# Placeholder Grafik Chart.js #}
+            <div class="relative w-full h-52 md:h-64">
+              <canvas id="grafik-kelembapan-bulanan" class="w-full h-full"></canvas>
+            </div>
+            {# Statistik ringkas di bawah grafik #}
+            <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t-2 border-forest">
+              <div class="text-center">
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Rata-rata</p>
+                <p id="stat-kelembapan-rata" class="text-lg font-grotesk font-bold text-forest">—</p>
+                <p class="text-[9px] font-grotesk text-muted">%</p>
+              </div>
+              <div class="text-center border-l border-r border-forest">
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Tertinggi</p>
+                <p id="stat-kelembapan-max" class="text-lg font-grotesk font-bold text-forest">—</p>
+                <p class="text-[9px] font-grotesk text-muted">%</p>
+              </div>
+              <div class="text-center">
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Terendah</p>
+                <p id="stat-kelembapan-min" class="text-lg font-grotesk font-bold text-forest">—</p>
+                <p class="text-[9px] font-grotesk text-muted">%</p>
+              </div>
+            </div>
+          </div>
+
+          {# ── Grafik 2: Fluktuasi Suhu ── #}
+          <div class="geo-card corner-mark p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-[10px] font-grotesk font-semibold text-muted tracking-widest uppercase">Tren Historis</p>
+                <h3 class="text-base font-grotesk font-bold text-forest mt-0.5">Fluktuasi Suhu</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="flex items-center gap-1.5 text-[10px] font-grotesk text-muted tracking-widest uppercase">
+                  <span class="w-3 h-0.5 bg-forest block"></span>Suhu Aktual
+                </span>
+                <span class="flex items-center gap-1.5 text-[10px] font-grotesk text-red-500 tracking-widest uppercase">
+                  <span class="w-3 h-0.5 bg-red-400 block"></span>Ambang Kritis
+                </span>
+              </div>
+            </div>
+            {# Placeholder Grafik Chart.js #}
+            <div class="relative w-full h-52 md:h-64">
+              <canvas id="grafik-suhu-bulanan" class="w-full h-full"></canvas>
+            </div>
+            {# Statistik ringkas di bawah grafik #}
+            <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t-2 border-forest">
+              <div class="text-center">
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Rata-rata</p>
+                <p id="stat-suhu-rata" class="text-lg font-grotesk font-bold text-forest">—</p>
+                <p class="text-[9px] font-grotesk text-muted">°C</p>
+              </div>
+              <div class="text-center border-l border-r border-forest">
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Tertinggi</p>
+                <p id="stat-suhu-max" class="text-lg font-grotesk font-bold text-forest">—</p>
+                <p class="text-[9px] font-grotesk text-muted">°C</p>
+              </div>
+              <div class="text-center">
+                <p class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Terendah</p>
+                <p id="stat-suhu-min" class="text-lg font-grotesk font-bold text-forest">—</p>
+                <p class="text-[9px] font-grotesk text-muted">°C</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {# ══════════════════════════════════════════ #}
+        {# KOLOM KANAN (1/3): Panel Ekspor Laporan  #}
+        {# ══════════════════════════════════════════ #}
+        <div class="lg:col-span-1 flex flex-col gap-6">
+
+          {# Panel Ekspor Laporan #}
+          <div class="geo-card-lime corner-mark p-5 flex flex-col gap-5">
+            <div>
+              <p class="text-[10px] font-grotesk font-semibold text-muted tracking-widest uppercase">Panel Kontrol</p>
+              <h3 class="text-base font-grotesk font-bold text-forest mt-0.5">Ekspor Laporan</h3>
+              <p class="text-xs font-inter text-muted mt-1 leading-relaxed">
+                Unduh data historis sensor dalam format pilihan Anda untuk analisis lebih lanjut.
+              </p>
+            </div>
+
+            <div class="section-rule pt-4 flex flex-col gap-3">
+
+              {# ── Tombol Unduh PDF ── #}
+              <button id="btn-unduh-pdf"
+                class="group relative w-full geo-card overflow-hidden border-2 border-forest bg-forest text-lime p-4 flex items-center gap-4 tr hover:bg-canvas hover:text-forest cursor-pointer">
+                {# Sudut dekoratif #}
+                <span class="absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-lime border-r-transparent group-hover:border-t-lime-deep tr"></span>
+                {# Ikon geometris PDF #}
+                <div class="w-10 h-10 border-2 border-current flex items-center justify-center flex-shrink-0 tr">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="square" stroke-linejoin="miter" d="M19 3H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V5a2 2 0 00-2-2z"/>
+                    <path stroke-linecap="square" d="M3 7v10a2 2 0 002 2h2"/>
+                    <path stroke-linecap="square" d="M10 10h5M10 14h5M10 18h3"/>
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <p class="text-[10px] font-grotesk font-semibold tracking-widest uppercase opacity-70">Format Dokumen</p>
+                  <p class="text-sm font-grotesk font-bold tracking-wide">Unduh PDF</p>
+                </div>
+                {# Panah arah kanan #}
+                <svg class="w-4 h-4 ml-auto opacity-50 group-hover:opacity-100 group-hover:translate-x-1 tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="square" stroke-width="2" d="M9 18l6-6-6-6"/>
+                </svg>
+              </button>
+
+              {# ── Tombol Unduh CSV ── #}
+              <button id="btn-unduh-csv"
+                class="group relative w-full geo-card overflow-hidden border-2 border-forest bg-canvas text-forest p-4 flex items-center gap-4 tr hover:bg-lime cursor-pointer">
+                <span class="absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-forest border-r-transparent group-hover:border-t-lime-deep tr"></span>
+                {# Ikon geometris CSV #}
+                <div class="w-10 h-10 border-2 border-current flex items-center justify-center flex-shrink-0 tr">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="square" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline stroke-linecap="square" points="14,2 14,8 20,8"/>
+                    <line stroke-linecap="square" x1="8" y1="13" x2="16" y2="13"/>
+                    <line stroke-linecap="square" x1="8" y1="17" x2="12" y2="17"/>
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <p class="text-[10px] font-grotesk font-semibold tracking-widest uppercase opacity-60">Tabel Terpisah Koma</p>
+                  <p class="text-sm font-grotesk font-bold tracking-wide">Unduh CSV</p>
+                </div>
+                <svg class="w-4 h-4 ml-auto opacity-40 group-hover:opacity-100 group-hover:translate-x-1 tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="square" stroke-width="2" d="M9 18l6-6-6-6"/>
+                </svg>
+              </button>
+
+              {# ── Tombol Ekspor Spreadsheet ── #}
+              <button id="btn-ekspor-spreadsheet"
+                class="group relative w-full geo-card overflow-hidden border-2 border-forest bg-canvas text-forest p-4 flex items-center gap-4 tr hover:bg-lime cursor-pointer">
+                <span class="absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-forest border-r-transparent group-hover:border-t-lime-deep tr"></span>
+                {# Ikon geometris Spreadsheet #}
+                <div class="w-10 h-10 border-2 border-current flex items-center justify-center flex-shrink-0 tr">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <rect stroke-linecap="square" x="3" y="3" width="18" height="18" rx="0"/>
+                    <line stroke-linecap="square" x1="3" y1="9" x2="21" y2="9"/>
+                    <line stroke-linecap="square" x1="3" y1="15" x2="21" y2="15"/>
+                    <line stroke-linecap="square" x1="9" y1="3" x2="9" y2="21"/>
+                    <line stroke-linecap="square" x1="15" y1="3" x2="15" y2="21"/>
+                  </svg>
+                </div>
+                <div class="text-left">
+                  <p class="text-[10px] font-grotesk font-semibold tracking-widest uppercase opacity-60">Microsoft Excel / ODS</p>
+                  <p class="text-sm font-grotesk font-bold tracking-wide">Ekspor Spreadsheet</p>
+                </div>
+                <svg class="w-4 h-4 ml-auto opacity-40 group-hover:opacity-100 group-hover:translate-x-1 tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="square" stroke-width="2" d="M9 18l6-6-6-6"/>
+                </svg>
+              </button>
+
+            </div>
+          </div>
+
+          {# ── Panel Info Rekam Data ── #}
+          <div class="geo-card p-5 flex flex-col gap-4">
+            <div>
+              <p class="text-[10px] font-grotesk font-semibold text-muted tracking-widest uppercase">Informasi</p>
+              <h3 class="text-sm font-grotesk font-bold text-forest mt-0.5">Rekam Data</h3>
+            </div>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center border-b border-forest/20 pb-2">
+                <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Total Titik Data</span>
+                <span id="info-total-data" class="text-sm font-grotesk font-bold text-forest">—</span>
+              </div>
+              <div class="flex justify-between items-center border-b border-forest/20 pb-2">
+                <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Sensor Aktif</span>
+                <span class="text-sm font-grotesk font-bold text-forest">4</span>
+              </div>
+              <div class="flex justify-between items-center border-b border-forest/20 pb-2">
+                <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Frekuensi Sampling</span>
+                <span class="text-sm font-grotesk font-bold text-forest">5 Detik</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Format Log</span>
+                <span class="text-sm font-grotesk font-bold text-forest">JSON / TS</span>
+              </div>
+            </div>
+          </div>
+
+          {# ── Indikator Status Data ── #}
+          <div class="geo-card-lime p-4 flex items-center gap-3">
+            <span class="w-2.5 h-2.5 bg-forest pulse-active block flex-shrink-0"></span>
+            <div>
+              <p class="text-[10px] font-grotesk font-bold text-forest tracking-widest uppercase">Data Sinkron</p>
+              <p class="text-[9px] font-inter text-muted mt-0.5">Grafik diperbarui secara real-time via WebSocket</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div>{# ── Akhir #view-analitik ── #}
+
+{% endblock %}
+
+{# ── Script WebSocket tambahan, dimuat setelah DOM selesai ── #}
+{% block extra_scripts %}
+  {# Konfigurasi URL WebSocket — dibaca oleh pandu-ws.js #}
+  <script>
+    /* URL WebSocket — otomatis menyesuaikan protokol (ws:// atau wss://) */
+    const WS_URL = (window.location.protocol === 'https:' ? 'wss://' : 'ws://')
+                   + window.location.host
+                   + '/ws/dashboard/';
+  </script>
+  {# Script WebSocket utama PANDU #}
+  <script src="{% static 'js/pandu-ws.js' %}"></script>
+
+  {# ── Pustaka Ekspor Laporan (CDN) ── #}
+  {# jsPDF: membuat dokumen PDF di sisi klien #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  {# jspdf-autotable: plugin tabel untuk jsPDF #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  {# SheetJS: membuat file Excel .xlsx di sisi klien #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  {# ── Chart.js untuk grafik historis di View Analitik ── #}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Script SPA PANDU: mengontrol perpindahan view tanpa reload halaman -->
+  <script>
+    /* ──────────────────────────────────────────────────────────
+       Variabel referensi elemen DOM utama SPA
+    ────────────────────────────────────────────────────────── */
+    const viewOperasional = document.getElementById('view-operasional');
+    const viewAnalitik    = document.getElementById('view-analitik');
+    const semuaMenuNav    = document.querySelectorAll('[data-target-view]');
+
+    /* ──────────────────────────────────────────────────────────
+       Instansi Chart.js — disimpan agar bisa di-destroy/update
+    ────────────────────────────────────────────────────────── */
+    let grafikKelembapan = null;
+    let grafikSuhu       = null;
+
+    /* ──────────────────────────────────────────────────────────
+       fungsiAktifkanView(namaView)
+       Menyembunyikan semua view, lalu menampilkan view target.
+       Juga mengatur class aktif pada menu navbar.
+
+       CATATAN: Menggunakan class `opacity-60` terpisah (bukan
+       `text-canvas/60`) karena opacity modifier Tailwind tidak
+       dapat di-toggle reliabel via classList pada runtime —
+       CSS custom property --tw-text-opacity tidak ikut ter-set.
+    ────────────────────────────────────────────────────────── */
+    function fungsiAktifkanView(namaView) {
+      /* 1. Sembunyikan semua view */
+      viewOperasional.classList.add('hidden');
+      viewAnalitik.classList.add('hidden');
+
+      /* 2. Reset semua menu ke kondisi tidak aktif */
+      semuaMenuNav.forEach(menu => {
+        menu.classList.remove('nav-active');   /* hilangkan garis bawah lime */
+        menu.classList.add('opacity-60');      /* redupkan teks */
+      });
+
+      /* 3. Tampilkan view yang sesuai */
+      if (namaView === 'analitik') {
+        viewAnalitik.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        /* Inisialisasi grafik Chart.js jika belum pernah dimuat */
+        if (!grafikKelembapan || !grafikSuhu) {
+          setTimeout(inisialisasiGrafik, 100);
+        }
+      } else {
+        /* Tampilkan view operasional */
+        viewOperasional.classList.remove('hidden');
+        /* Scroll ke section anchor yang sesuai */
+        if (namaView && namaView !== 'operasional') {
+          const elTarget = document.getElementById(namaView);
+          if (elTarget) {
+            setTimeout(() => elTarget.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+          }
+        }
+      }
+
+      /* 4. Soroti menu yang aktif — cocokkan dengan data-target-view */
+      semuaMenuNav.forEach(menu => {
+        if (menu.dataset.targetView === namaView) {
+          menu.classList.add('nav-active');    /* tambahkan garis bawah lime */
+          menu.classList.remove('opacity-60'); /* kembalikan ke full opacity */
+        }
+      });
+    }
+
+    /* ──────────────────────────────────────────────────────────
+       Event listener — menggunakan e.currentTarget agar referensi
+       elemen yang diklik selalu akurat meski ada child element
+    ────────────────────────────────────────────────────────── */
+    semuaMenuNav.forEach(menu => {
+      menu.addEventListener('click', (e) => {
+        e.preventDefault();
+        /* e.currentTarget = elemen button yang memiliki listener ini */
+        fungsiAktifkanView(e.currentTarget.dataset.targetView);
+      });
+    });
+
+    /* ──────────────────────────────────────────────────────────
+       inisialisasiGrafik()
+       Membuat grafik Chart.js pada elemen <canvas> di View Analitik
+    ────────────────────────────────────────────────────────── */
+    function inisialisasiGrafik() {
+      /* Konfigurasi palet warna PANDU */
+      const warnaTama    = '#1A3626';    /* forest */
+      const warnaLime    = '#D9F2C4';    /* lime */
+      const warnaLimeDp  = '#B5E48C';    /* lime-deep */
+      const warnaKritis  = '#ef4444';    /* merah */
+      const warnaKanvas  = '#FFFFFF';    /* canvas */
+
+      /* ── Generate data dummy historis 7 hari ── */
+      const labelHari = [];
+      const dataKelembapan = [];
+      const dataSuhu = [];
+      const sekarang = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const tgl = new Date(sekarang);
+        tgl.setDate(tgl.getDate() - i);
+        labelHari.push(tgl.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }));
+        dataKelembapan.push(Math.round(55 + Math.random() * 25));
+        dataSuhu.push(parseFloat((28 + Math.random() * 8).toFixed(1)));
+      }
+
+      /* Perbarui statistik kelembapan */
+      const rataKelembapan = Math.round(dataKelembapan.reduce((a,b)=>a+b,0)/dataKelembapan.length);
+      document.getElementById('stat-kelembapan-rata').textContent = rataKelembapan;
+      document.getElementById('stat-kelembapan-max').textContent  = Math.max(...dataKelembapan);
+      document.getElementById('stat-kelembapan-min').textContent  = Math.min(...dataKelembapan);
+
+      /* Perbarui statistik suhu */
+      const rataSuhu = parseFloat((dataSuhu.reduce((a,b)=>a+b,0)/dataSuhu.length).toFixed(1));
+      document.getElementById('stat-suhu-rata').textContent = rataSuhu;
+      document.getElementById('stat-suhu-max').textContent  = Math.max(...dataSuhu).toFixed(1);
+      document.getElementById('stat-suhu-min').textContent  = Math.min(...dataSuhu).toFixed(1);
+
+      /* Perbarui info total data (estimasi) */
+      const totalTitik = (labelHari.length * 24 * 60 * 60 / 5).toLocaleString('id-ID');
+      const elTotal = document.getElementById('info-total-data');
+      if (elTotal) elTotal.textContent = totalTitik;
+
+      /* ── Opsi umum grafik ── */
+      const opsiUmumGrafik = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: warnaTama,
+            titleColor: warnaLime,
+            bodyColor: warnaLime,
+            borderColor: warnaLimeDp,
+            borderWidth: 1,
+            titleFont: { family: 'Space Grotesk', size: 10, weight: '600' },
+            bodyFont:  { family: 'Space Grotesk', size: 11 },
+            padding: 10,
+            cornerRadius: 0,
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#1A362218', drawBorder: false },
+            ticks: {
+              color: '#6B7A72',
+              font: { family: 'Space Grotesk', size: 9 },
+            },
+            border: { color: warnaTama, width: 2 }
+          },
+          y: {
+            grid: { color: '#1A362218', drawBorder: false },
+            ticks: {
+              color: '#6B7A72',
+              font: { family: 'Space Grotesk', size: 9 },
+            },
+            border: { color: warnaTama, width: 2 }
+          }
+        },
+        animation: {
+          duration: 900,
+          easing: 'easeOutQuart'
+        }
+      };
+
+      /* ── Buat Grafik Kelembapan ── */
+      const canvasKelembapan = document.getElementById('grafik-kelembapan-bulanan');
+      if (canvasKelembapan) {
+        if (grafikKelembapan) grafikKelembapan.destroy();
+        grafikKelembapan = new Chart(canvasKelembapan, {
+          type: 'line',
+          data: {
+            labels: labelHari,
+            datasets: [
+              {
+                label: 'Kelembapan (%)',
+                data: dataKelembapan,
+                borderColor: warnaTama,
+                backgroundColor: 'rgba(26,54,38,0.06)',
+                borderWidth: 2,
+                pointBackgroundColor: warnaTama,
+                pointBorderColor: warnaLime,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.4,
+                fill: true,
+              },
+              {
+                label: 'Batas Optimal',
+                data: Array(labelHari.length).fill(70),
+                borderColor: warnaLimeDp,
+                borderWidth: 1.5,
+                borderDash: [6, 3],
+                pointRadius: 0,
+                tension: 0,
+                fill: false,
+              }
+            ]
+          },
+          options: {
+            ...opsiUmumGrafik,
+            scales: {
+              ...opsiUmumGrafik.scales,
+              y: { ...opsiUmumGrafik.scales.y, min: 30, max: 100,
+                   ticks: { ...opsiUmumGrafik.scales.y.ticks, callback: v => v + '%' } }
+            }
+          }
+        });
+      }
+
+      /* ── Buat Grafik Suhu ── */
+      const canvasSuhu = document.getElementById('grafik-suhu-bulanan');
+      if (canvasSuhu) {
+        if (grafikSuhu) grafikSuhu.destroy();
+        grafikSuhu = new Chart(canvasSuhu, {
+          type: 'line',
+          data: {
+            labels: labelHari,
+            datasets: [
+              {
+                label: 'Suhu (°C)',
+                data: dataSuhu,
+                borderColor: warnaTama,
+                backgroundColor: 'rgba(26,54,38,0.06)',
+                borderWidth: 2,
+                pointBackgroundColor: warnaTama,
+                pointBorderColor: warnaLime,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.4,
+                fill: true,
+              },
+              {
+                label: 'Ambang Kritis',
+                data: Array(labelHari.length).fill(36),
+                borderColor: warnaKritis,
+                borderWidth: 1.5,
+                borderDash: [6, 3],
+                pointRadius: 0,
+                tension: 0,
+                fill: false,
+              }
+            ]
+          },
+          options: {
+            ...opsiUmumGrafik,
+            scales: {
+              ...opsiUmumGrafik.scales,
+              y: { ...opsiUmumGrafik.scales.y, min: 20, max: 45,
+                   ticks: { ...opsiUmumGrafik.scales.y.ticks, callback: v => v + '°C' } }
+            }
+          }
+        });
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       DATA HISTORIS DUMMY — 10 baris rekaman sensor PANDU
+       Sumber data untuk ekspor PDF / CSV / Excel
+    ══════════════════════════════════════════════════════════ */
+    const dataHistorisSensor = [
+      { tanggal: '14 Sep 2026', kelembapan: '72%', suhu: '28.4\u00b0C', ph: '6.2', prediksiPanen: 'Optimal' },
+      { tanggal: '15 Sep 2026', kelembapan: '68%', suhu: '29.1\u00b0C', ph: '6.3', prediksiPanen: 'Optimal' },
+      { tanggal: '16 Sep 2026', kelembapan: '74%', suhu: '27.8\u00b0C', ph: '6.1', prediksiPanen: 'Optimal' },
+      { tanggal: '17 Sep 2026', kelembapan: '61%', suhu: '31.2\u00b0C', ph: '6.5', prediksiPanen: 'Perhatikan' },
+      { tanggal: '18 Sep 2026', kelembapan: '58%', suhu: '33.7\u00b0C', ph: '6.7', prediksiPanen: 'Perhatikan' },
+      { tanggal: '19 Sep 2026', kelembapan: '65%', suhu: '30.5\u00b0C', ph: '6.4', prediksiPanen: 'Optimal' },
+      { tanggal: '20 Sep 2026', kelembapan: '79%', suhu: '26.9\u00b0C', ph: '6.0', prediksiPanen: 'Optimal' },
+      { tanggal: '20 Sep 2026', kelembapan: '55%', suhu: '35.1\u00b0C', ph: '7.0', prediksiPanen: 'Waspada' },
+      { tanggal: '20 Sep 2026', kelembapan: '70%', suhu: '29.8\u00b0C', ph: '6.2', prediksiPanen: 'Optimal' },
+      { tanggal: '21 Sep 2026', kelembapan: '73%', suhu: '28.6\u00b0C', ph: '6.3', prediksiPanen: 'Optimal' },
+    ];
+
+    /* Header kolom tabel laporan */
+    const headerKolom = ['Tanggal', 'Kelembapan', 'Suhu', 'pH Tanah', 'Prediksi Panen'];
+
+    /* ──────────────────────────────────────────────────────────
+       getNamaFile(ekstensi)
+       Dipanggil SAAT KLIK (bukan saat load halaman) sehingga
+       tanggal selalu akurat. Menggunakan waktu LOKAL agar tidak
+       meleset tanggal di zona WIB +07:00 vs UTC.
+    ────────────────────────────────────────────────────────── */
+    function getNamaFile(ekstensi) {
+      const d   = new Date();
+      const thn = d.getFullYear();
+      const bln = String(d.getMonth() + 1).padStart(2, '0'); /* 01–12 */
+      const tgl = String(d.getDate()).padStart(2, '0');       /* 01–31 */
+      return 'Laporan_PANDU_' + thn + '-' + bln + '-' + tgl + '.' + ekstensi;
+    }
+
+    /* ──────────────────────────────────────────────────────────
+       unduhCSV() — Bulletproof Blob Download
+       Alur wajib: createElement → set href → set download →
+       appendChild (KRUSIAL) → click → removeChild
+    ────────────────────────────────────────────────────────── */
+    function unduhCSV() {
+      /* Baris header kolom */
+      const barisHeader = headerKolom.join(',');
+
+      /* Baris data — nilai dibungkus kutip ganda untuk keamanan koma */
+      const barisData = dataHistorisSensor.map(function(b) {
+        return ['"'+b.tanggal+'"','"'+b.kelembapan+'"','"'+b.suhu+'"','"'+b.ph+'"','"'+b.prediksiPanen+'"'].join(',');
+      });
+
+      /* Gabung header + baris data menjadi string CSV */
+      const isiCSV = [barisHeader].concat(barisData).join('\n');
+
+      /* Blob dengan BOM UTF-8 agar Excel baca karakter khusus dengan benar */
+      const blob = new Blob(['\uFEFF' + isiCSV], { type: 'text/csv;charset=utf-8;' });
+
+      /* === ALUR BULLETPROOF DOWNLOAD === */
+      const link    = document.createElement('a');        /* 1. Buat elemen <a>             */
+      link.href     = URL.createObjectURL(blob);          /* 2. Set Blob URL sebagai href    */
+      link.download = getNamaFile('csv');                 /* 3. Set nama file + ekstensi     */
+      link.style.display = 'none';
+
+      document.body.appendChild(link);                   /* 4. ► KRUSIAL: masuk DOM dulu —   */
+                                                          /*    tanpa ini browser Windows      */
+                                                          /*    mengabaikan atribut download   */
+                                                          /*    dan fallback ke nama UUID acak */
+
+      link.click();                                       /* 5. Picu unduhan                  */
+      document.body.removeChild(link);                   /* 6. Bersihkan dari DOM             */
+      URL.revokeObjectURL(link.href);                    /* 7. Bebaskan memori Blob URL       */
+    }
+
+    /* ──────────────────────────────────────────────────────────
+       eksporSpreadsheet() — Bulletproof SheetJS
+       Wajib menggunakan XLSX.writeFile() bawaan pustaka.
+       Dilarang membuat Blob manual untuk format ini.
+    ────────────────────────────────────────────────────────── */
+    function eksporSpreadsheet() {
+      /* Bentuk array of object dengan nama kolom Bahasa Indonesia */
+      const dataTabel = dataHistorisSensor.map(function(b) {
+        return {
+          'Tanggal':        b.tanggal,
+          'Kelembapan (%)': b.kelembapan,
+          'Suhu':           b.suhu,
+          'pH Tanah':       b.ph,
+          'Prediksi Panen': b.prediksiPanen
+        };
+      });
+
+      /* Buat lembar kerja dari array of object */
+      const lembarKerja = XLSX.utils.json_to_sheet(dataTabel);
+
+      /* Atur lebar kolom agar rapi saat dibuka di Excel */
+      lembarKerja['!cols'] = [
+        { wch: 16 }, /* Tanggal        */
+        { wch: 16 }, /* Kelembapan     */
+        { wch: 12 }, /* Suhu           */
+        { wch: 10 }, /* pH Tanah       */
+        { wch: 16 }, /* Prediksi Panen */
+      ];
+
+      /* Buat buku kerja dan tambahkan lembar */
+      const bukuKerja = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(bukuKerja, lembarKerja, 'Data Historis Sensor');
+
+      /* Unduh langsung via fungsi bawaan SheetJS — nama file eksplisit */
+      XLSX.writeFile(bukuKerja, getNamaFile('xlsx')); /* writeFile menangani download sendiri */
+    }
+
+    /* ──────────────────────────────────────────────────────────
+       unduhPDF()
+       Gunakan jsPDF + autoTable untuk membuat laporan PDF
+       landscape A4 bergaya PANDU: header berwarna, tabel data,
+       warna merah/kuning untuk status Waspada/Perhatikan.
+    ────────────────────────────────────────────────────────── */
+    function unduhPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      /* Palet warna PANDU dalam format RGB */
+      const warnaForest = [26, 54, 38];    /* #1A3626 */
+      const warnaLime   = [217, 242, 196]; /* #D9F2C4 */
+      const warnaMuted  = [107, 122, 114]; /* #6B7A72 */
+
+      /* ─ Header bar berwarna forest (full lebar A4 landscape) ─ */
+      doc.setFillColor(...warnaForest);
+      doc.rect(0, 0, 297, 22, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(...warnaLime);
+      doc.text('PANDU', 14, 13);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('Pengawas Agrikultur Terpadu \u00b7 Edge AI Agriculture System', 37, 13);
+
+      /* Tanggal cetak di pojok kanan atas header */
+      const tglCetak = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+      doc.text('Dicetak: ' + tglCetak, 297 - 14, 13, { align: 'right' });
+
+      /* ─ Judul laporan ─ */
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(...warnaForest);
+      doc.text('Laporan Historis Sensor PANDU', 14, 32);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...warnaMuted);
+      doc.text('Data lingkungan lahan dari sistem akuisisi ESP32 + Google Coral Edge TPU', 14, 38);
+
+      /* Garis pemisah bawah judul */
+      doc.setDrawColor(...warnaForest);
+      doc.setLineWidth(0.5);
+      doc.line(14, 41, 283, 41);
+
+      /* ─ Tabel data menggunakan autoTable ─ */
+      doc.autoTable({
+        startY: 45,
+        head: [headerKolom],
+        body: dataHistorisSensor.map(b => [b.tanggal, b.kelembapan, b.suhu, b.ph, b.prediksiPanen]),
+        headStyles: {
+          fillColor: warnaForest, textColor: warnaLime,
+          fontStyle: 'bold', fontSize: 9, halign: 'center', cellPadding: 4,
+        },
+        bodyStyles: { textColor: warnaForest, fontSize: 8.5, cellPadding: 3.5 },
+        alternateRowStyles: { fillColor: [247, 253, 243] },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 32 },
+          1: { halign: 'center', cellWidth: 30 },
+          2: { halign: 'center', cellWidth: 26 },
+          3: { halign: 'center', cellWidth: 22 },
+          4: { halign: 'center', cellWidth: 36 },
+        },
+        tableLineColor: warnaForest,
+        tableLineWidth: 0.3,
+        /* Warnai sel status: Waspada → merah, Perhatikan → kuning */
+        didParseCell: function(data) {
+          if (data.section === 'body') {
+            if (data.cell.raw === 'Waspada') {
+              data.cell.styles.textColor = [239, 68, 68];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (data.cell.raw === 'Perhatikan') {
+              data.cell.styles.textColor = [234, 179, 8];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        },
+      });
+
+      /* ─ Footer di setiap halaman ─ */
+      const jmlHalaman = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= jmlHalaman; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(...warnaMuted);
+        doc.text(
+          'Laporan PANDU \u00b7 Halaman ' + i + ' dari ' + jmlHalaman + ' \u00b7 Dibuat otomatis oleh sistem Edge AI',
+          14, doc.internal.pageSize.height - 8
+        );
+        doc.text(tglCetak, 297 - 14, doc.internal.pageSize.height - 8, { align: 'right' });
+      }
+
+      /* Unduh PDF langsung via doc.save() bawaan jsPDF —
+         DILARANG doc.output('bloburl') atau window.open */
+      doc.save(getNamaFile('pdf')); /* nama file: Laporan_PANDU_YYYY-MM-DD.pdf */
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       EVENT LISTENER tombol ekspor + Toast Notifikasi
+       Pola: (1) disable tombol, (2) toast info,
+             (3) tunggu 1.5 dtk, (4) ekspor nyata, (5) toast sukses
+    ══════════════════════════════════════════════════════════ */
+
+    /* Helper: nonaktifkan / aktifkan tombol selama proses berjalan */
+    function setStatusTombol(id, nonaktif) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.disabled = nonaktif;
+      el.style.opacity       = nonaktif ? '0.5' : '';
+      el.style.pointerEvents = nonaktif ? 'none' : '';
+    }
+
+    /* Tombol Unduh PDF */
+    document.getElementById('btn-unduh-pdf').addEventListener('click', () => {
+      setStatusTombol('btn-unduh-pdf', true);
+      showToast('Menyiapkan laporan PDF...', 'info');
+      setTimeout(() => {
+        try   { unduhPDF(); showToast('Laporan PDF berhasil diunduh!', 'success'); }
+        catch (err) { showToast('Gagal membuat PDF. Coba lagi.', 'error'); console.error('[PANDU] PDF:', err); }
+        finally     { setStatusTombol('btn-unduh-pdf', false); }
+      }, 1500);
+    });
+
+    /* Tombol Unduh CSV */
+    document.getElementById('btn-unduh-csv').addEventListener('click', () => {
+      setStatusTombol('btn-unduh-csv', true);
+      showToast('Mengekspor data ke CSV...', 'info');
+      setTimeout(() => {
+        try   { unduhCSV(); showToast('Data CSV berhasil diunduh!', 'success'); }
+        catch (err) { showToast('Gagal mengekspor CSV. Coba lagi.', 'error'); console.error('[PANDU] CSV:', err); }
+        finally     { setStatusTombol('btn-unduh-csv', false); }
+      }, 1500);
+    });
+
+    /* Tombol Ekspor Spreadsheet */
+    document.getElementById('btn-ekspor-spreadsheet').addEventListener('click', () => {
+      setStatusTombol('btn-ekspor-spreadsheet', true);
+      showToast('Menyiapkan file Spreadsheet Excel...', 'info');
+      setTimeout(() => {
+        try   { eksporSpreadsheet(); showToast('Spreadsheet Excel berhasil diunduh!', 'success'); }
+        catch (err) { showToast('Gagal mengekspor Spreadsheet. Coba lagi.', 'error'); console.error('[PANDU] XLSX:', err); }
+        finally     { setStatusTombol('btn-ekspor-spreadsheet', false); }
+      }, 1500);
+    });
+
+    /* ──────────────────────────────────────────────────────────
+       Tombol rentang waktu — perbarui grafik saat diklik
+    ────────────────────────────────────────────────────────── */
+    document.querySelectorAll('.btn-rentang').forEach(btn => {
+      btn.addEventListener('click', () => {
+        /* Atur class aktif */
+        document.querySelectorAll('.btn-rentang').forEach(b => {
+          b.classList.remove('bg-forest', 'text-lime', 'aktif-rentang');
+          b.classList.add('bg-canvas', 'text-forest');
+        });
+        btn.classList.add('bg-forest', 'text-lime', 'aktif-rentang');
+        btn.classList.remove('bg-canvas', 'text-forest');
+        /* Muat ulang grafik dengan rentang baru (data dummy) */
+        if (grafikKelembapan || grafikSuhu) {
+          if (grafikKelembapan) grafikKelembapan.destroy();
+          if (grafikSuhu)       grafikSuhu.destroy();
+          grafikKelembapan = null;
+          grafikSuhu       = null;
+          inisialisasiGrafik();
+        }
+      });
+    });
+  </script>
+{% endblock %}

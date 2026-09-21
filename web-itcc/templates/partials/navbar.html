@@ -1,0 +1,78 @@
+{# ============================================================ #}
+{# partials/navbar.html — Navigasi utama PANDU                  #}
+{# Di-include dari base.html                                    #}
+{# ============================================================ #}
+<nav class="bg-forest sticky top-0 z-50">
+  <div class="max-w-screen-xl mx-auto px-6 flex items-center justify-between h-14">
+
+    {# ── Logo PANDU ── #}
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 bg-lime flex items-center justify-center">
+        <span class="text-forest font-grotesk font-bold text-xs leading-none">P</span>
+      </div>
+      <span class="text-canvas font-grotesk font-semibold text-sm tracking-widest uppercase">PANDU</span>
+      <span class="hidden sm:block text-lime/50 text-xs font-inter font-light tracking-wide ml-1">Edge AI Agriculture</span>
+    </div>
+
+    {# ── Tautan Navigasi SPA ── #}
+    {# Menggunakan data-target-view (bukan href/#) agar WebSocket tidak terputus #}
+    <div class="hidden md:flex items-center gap-1 h-full">
+      <button data-target-view="operasional"
+              class="nav-active h-full flex items-center px-4 text-canvas text-xs font-grotesk font-medium tracking-widest uppercase tr hover:text-lime cursor-pointer bg-transparent border-none outline-none">Dashboard</button>
+      <button data-target-view="sensors"
+              class="h-full flex items-center px-4 text-canvas opacity-60 text-xs font-grotesk font-medium tracking-widest uppercase tr hover:text-lime hover:opacity-100 cursor-pointer bg-transparent border-none outline-none">Sensor</button>
+      <button data-target-view="prediction"
+              class="h-full flex items-center px-4 text-canvas opacity-60 text-xs font-grotesk font-medium tracking-widest uppercase tr hover:text-lime hover:opacity-100 cursor-pointer bg-transparent border-none outline-none">Prediksi</button>
+      <button data-target-view="actuators"
+              class="h-full flex items-center px-4 text-canvas opacity-60 text-xs font-grotesk font-medium tracking-widest uppercase tr hover:text-lime hover:opacity-100 cursor-pointer bg-transparent border-none outline-none">Aktuator</button>
+      {# ── Menu Analitik: memisah dengan garis vertikal tipis ── #}
+      <span class="h-4 w-px bg-lime/30 mx-1"></span>
+      <button data-target-view="analitik"
+              class="h-full flex items-center px-4 text-canvas opacity-60 text-xs font-grotesk font-medium tracking-widest uppercase tr hover:text-lime hover:opacity-100 cursor-pointer bg-transparent border-none outline-none relative group">
+        Analitik
+        {# Titik penanda khusus menu Analitik #}
+        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-lime-deep opacity-0 group-hover:opacity-100 tr"></span>
+      </button>
+    </div>
+
+    {# ── Pil Status + Indikator WebSocket & Cloud ── #}
+    <div class="flex items-center gap-4">
+      
+      {# Status Koneksi Cloud #}
+      <div class="hidden sm:flex items-center gap-1.5" id="cloud-status-indicator">
+        <svg class="w-3.5 h-3.5 text-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="square" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+        </svg>
+        <span class="text-[9px] font-grotesk font-bold text-lime tracking-widest uppercase">Cloud Terhubung</span>
+      </div>
+
+      {# Status WebSocket — diperbarui oleh pandu-ws.js #}
+      <span id="ws-status-badge" class="text-[9px] font-grotesk tracking-widest uppercase ws-disconnected hidden md:block border-l border-lime/30 pl-4">
+        ⬤ WS
+      </span>
+      <div class="flex items-center gap-2 border border-lime/30 px-3 py-1">
+        <span class="w-2 h-2 bg-lime-deep pulse-active block"></span>
+        <span class="text-lime text-[10px] font-grotesk font-medium tracking-widest uppercase">Edge AI Aktif</span>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+{# ── Banner Peringatan Kritis (Disembunyikan secara default) ── #}
+<!-- Banner Kritis: Akan dimunculkan via JS saat ada anomali sensor (misal suhu > 36C) -->
+<div id="critical-alert-banner" class="hidden bg-red-700 border-b border-red-500 shadow-lg shadow-red-900/50">
+  <div class="max-w-screen-xl mx-auto px-6 py-2 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="w-2 h-2 bg-canvas pulse-active block"></span>
+      <span class="text-canvas text-[10px] font-grotesk font-bold tracking-widest uppercase" id="critical-alert-text">
+        PERINGATAN KRITIS: Parameter sensor di luar batas aman!
+      </span>
+    </div>
+    <button id="btn-tutup-banner" class="text-canvas/70 hover:text-canvas px-2 cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="square" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+</div>

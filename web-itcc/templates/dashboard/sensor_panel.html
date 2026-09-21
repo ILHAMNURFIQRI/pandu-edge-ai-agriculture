@@ -1,0 +1,180 @@
+{# ============================================================ #}
+{# dashboard/sensor_panel.html                                  #}
+{# Matriks Sensor Lingkungan — 4 kartu utama + strip sekunder   #}
+{# ID elemen dengan prefix "s-" siap untuk update WebSocket     #}
+{# ============================================================ #}
+<section id="sensors" class="border-b-2 border-forest">
+  <div class="max-w-screen-xl mx-auto px-6 py-10">
+
+    {# ── Header Seksi ── #}
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <p class="text-[10px] font-grotesk text-muted tracking-widest uppercase mb-1">Real-Time Monitoring</p>
+        <h2 class="text-2xl font-grotesk font-bold text-forest leading-none">Matriks Sensor Lingkungan</h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-forest pulse-active block"></span>
+        <span class="text-[10px] font-grotesk text-muted tracking-widest uppercase">Live · 1 Hz</span>
+      </div>
+    </div>
+
+    {# ── 4-Kolom Kartu Sensor (border tersambung) ── #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-0 border-2 border-forest">
+
+      {# ── Kartu 1: Kelembapan Tanah ── #}
+      <div class="border-r-2 border-forest p-5 tr group hover:bg-lime/20">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <p class="text-[9px] font-grotesk font-semibold text-muted tracking-widest uppercase mb-1">Kelembapan Tanah</p>
+            <p class="text-[9px] font-inter text-muted/60">Volumetric Water Content</p>
+          </div>
+          <div class="w-8 h-8 border-2 border-forest flex items-center justify-center bg-lime group-hover:bg-forest tr">
+            <svg class="w-4 h-4 text-forest group-hover:text-lime tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M12 2C6 10 4 14 4 16a8 8 0 0016 0c0-2-2-6-8-14z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-number">
+          {# id="s-kelembapan-nilai" → target update DOM WebSocket #}
+          <p class="font-grotesk font-bold text-5xl text-forest leading-none" id="s-kelembapan-nilai">72</p>
+          <p class="text-xs font-inter text-muted mt-1">%
+            <span id="s-kelembapan-tren" class="text-[10px] text-lime-deep font-semibold">▲ +3 dari kemarin</span>
+          </p>
+        </div>
+        <div class="mt-4">
+          <div class="flex justify-between text-[9px] font-grotesk text-muted mb-1 tracking-widest uppercase">
+            <span>0</span><span>Target: 65–80%</span><span>100</span>
+          </div>
+          <div class="w-full h-2 bg-lime">
+            <div id="s-kelembapan-bar" class="h-2 bg-forest bar-fill" style="--fill:72%"></div>
+          </div>
+        </div>
+        <div class="mt-3 bg-lime px-2 py-1 inline-flex items-center gap-1" id="s-kelembapan-status-box">
+          <span class="w-1.5 h-1.5 bg-forest block"></span>
+          <span id="s-kelembapan-status" class="text-[9px] font-grotesk font-bold text-forest tracking-widest uppercase">Optimal</span>
+        </div>
+      </div>
+
+      {# ── Kartu 2: pH Tanah ── #}
+      <div class="border-r-2 border-forest p-5 tr group hover:bg-lime/20">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <p class="text-[9px] font-grotesk font-semibold text-muted tracking-widest uppercase mb-1">pH Tanah</p>
+            <p class="text-[9px] font-inter text-muted/60">Acidity / Alkalinity Index</p>
+          </div>
+          <div class="w-8 h-8 border-2 border-forest flex items-center justify-center bg-lime group-hover:bg-forest tr">
+            <svg class="w-4 h-4 text-forest group-hover:text-lime tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-number">
+          <p class="font-grotesk font-bold text-5xl text-forest leading-none" id="s-ph-nilai">6.8</p>
+          <p class="text-xs font-inter text-muted mt-1">pH
+            <span id="s-ph-tren" class="text-[10px] text-lime-deep font-semibold">Stabil</span>
+          </p>
+        </div>
+        <div class="mt-4">
+          <div class="flex justify-between text-[9px] font-grotesk text-muted mb-1 tracking-widest uppercase">
+            <span>4.0</span><span>Target: 6.0–7.0</span><span>9.0</span>
+          </div>
+          {# Indikator posisi pH (relative di dalam bar) #}
+          <div class="w-full h-2 bg-lime relative">
+            <div class="absolute h-2 bg-lime-deep" style="left:40%;width:20%"></div>
+            <div id="s-ph-marker" class="absolute top-0 w-2 h-2 bg-forest" style="left:57%"></div>
+          </div>
+        </div>
+        <div class="mt-3 bg-lime px-2 py-1 inline-flex items-center gap-1">
+          <span class="w-1.5 h-1.5 bg-forest block"></span>
+          <span id="s-ph-status" class="text-[9px] font-grotesk font-bold text-forest tracking-widest uppercase">Optimal</span>
+        </div>
+      </div>
+
+      {# ── Kartu 3: Suhu Lingkungan ── #}
+      <div class="border-r-2 border-forest p-5 tr group hover:bg-lime/20">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <p class="text-[9px] font-grotesk font-semibold text-muted tracking-widest uppercase mb-1">Suhu Lingkungan</p>
+            <p class="text-[9px] font-inter text-muted/60">Ambient Temperature</p>
+          </div>
+          <div class="w-8 h-8 border-2 border-forest flex items-center justify-center bg-lime group-hover:bg-forest tr">
+            <svg class="w-4 h-4 text-forest group-hover:text-lime tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-number">
+          <p class="font-grotesk font-bold text-5xl text-forest leading-none" id="s-suhu-nilai">29</p>
+          <p class="text-xs font-inter text-muted mt-1">°C
+            <span id="s-suhu-tren" class="text-[10px] text-yellow-600 font-semibold">▲ +2 dari pagi</span>
+          </p>
+        </div>
+        <div class="mt-4">
+          <div class="flex justify-between text-[9px] font-grotesk text-muted mb-1 tracking-widest uppercase">
+            <span>15°</span><span>Target: 24–32°C</span><span>45°</span>
+          </div>
+          <div class="w-full h-2 bg-lime">
+            <div id="s-suhu-bar" class="h-2 bg-forest bar-fill" style="--fill:47%"></div>
+          </div>
+        </div>
+        <div class="mt-3 bg-lime px-2 py-1 inline-flex items-center gap-1">
+          <span class="w-1.5 h-1.5 bg-forest block"></span>
+          <span id="s-suhu-status" class="text-[9px] font-grotesk font-bold text-forest tracking-widest uppercase">Optimal</span>
+        </div>
+      </div>
+
+      {# ── Kartu 4: Intensitas Cahaya ── #}
+      <div class="p-5 tr group hover:bg-lime/20">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <p class="text-[9px] font-grotesk font-semibold text-muted tracking-widest uppercase mb-1">Intensitas Cahaya</p>
+            <p class="text-[9px] font-inter text-muted/60">Photosynthetic Active Rad.</p>
+          </div>
+          <div class="w-8 h-8 border-2 border-forest flex items-center justify-center bg-lime group-hover:bg-forest tr">
+            <svg class="w-4 h-4 text-forest group-hover:text-lime tr" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="5" stroke-width="2" stroke-linecap="square"/>
+              <path stroke-width="2" stroke-linecap="square" d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-number">
+          <p class="font-grotesk font-bold text-5xl text-forest leading-none">
+            <span id="s-cahaya-nilai">54</span><span class="text-2xl font-medium" id="s-cahaya-satuan-suffix">k</span>
+          </p>
+          <p class="text-xs font-inter text-muted mt-1">Lux
+            <span id="s-cahaya-tren" class="text-[10px] text-lime-deep font-semibold">Puncak siang</span>
+          </p>
+        </div>
+        <div class="mt-4">
+          <div class="flex justify-between text-[9px] font-grotesk text-muted mb-1 tracking-widest uppercase">
+            <span>0</span><span>Target: 30–60k</span><span>100k</span>
+          </div>
+          <div class="w-full h-2 bg-lime">
+            <div id="s-cahaya-bar" class="h-2 bg-forest bar-fill" style="--fill:54%"></div>
+          </div>
+        </div>
+        <div class="mt-3 bg-lime px-2 py-1 inline-flex items-center gap-1">
+          <span class="w-1.5 h-1.5 bg-forest block"></span>
+          <span id="s-cahaya-status" class="text-[9px] font-grotesk font-bold text-forest tracking-widest uppercase">Optimal</span>
+        </div>
+      </div>
+    </div>
+
+    {# ── Strip Sensor Sekunder ── #}
+    <div class="grid grid-cols-3 gap-0 border-2 border-t-0 border-forest">
+      <div class="border-r-2 border-forest px-5 py-3 flex items-center justify-between">
+        <span class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Kelembapan Udara</span>
+        <span id="s-hum-udara" class="font-grotesk font-bold text-forest">78%</span>
+      </div>
+      <div class="border-r-2 border-forest px-5 py-3 flex items-center justify-between">
+        <span class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Curah Hujan</span>
+        <span id="s-curah-hujan" class="font-grotesk font-bold text-forest">0.0 mm/h</span>
+      </div>
+      <div class="px-5 py-3 flex items-center justify-between">
+        <span class="text-[9px] font-grotesk text-muted tracking-widest uppercase">Konduktivitas EC</span>
+        <span id="s-ec" class="font-grotesk font-bold text-forest">1.8 dS/m</span>
+      </div>
+    </div>
+
+  </div>
+</section>
